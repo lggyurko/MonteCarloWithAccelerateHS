@@ -1,8 +1,7 @@
-
 %include agda.fmt
 %include lhs2TeX.fmt
 
-This piece of code enables the use of unicode characters. 
+
 
 \begin{code}
 {-# LANGUAGE UnicodeSyntax #-}
