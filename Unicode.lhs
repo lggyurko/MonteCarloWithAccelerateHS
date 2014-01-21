@@ -1,23 +1,39 @@
-> {-# LANGUAGE UnicodeSyntax #-}
->
-> module Unicode
-> where
 
-> infixr 2 ∨
-> (∨)  ∷  Bool → Bool → Bool
-> a ∨ b  =  a || b
+%include agda.fmt
+%include lhs2TeX.fmt
 
-> infixr 3 ∧
-> (∧)  ∷  Bool → Bool → Bool
-> a ∧ b  =  a && b
-               
-> infix 4 ≤, ≥
-> (≤), (≥)  ∷  (Ord a) ⇒ a → a → Bool
-> a ≤ b  =  a <= b
-> a ≥ b  =  a >= b
+This piece of code enables the use of unicode characters. 
 
-> infixr 9 ·
-> (·)  ∷  (b → c ) → (a → b) → (a → c)
-> f · g  =  \ x → f (g x)
+\begin{code}
+{-# LANGUAGE UnicodeSyntax #-}
+
+module Unicode
+where
+\end{code}
+
+\begin{code}
+infixr 2 ∨
+(∨)  ∷  Bool → Bool → Bool
+a ∨ b  =  a || b
+\end{code}
+
+\begin{code}
+infixr 3 ∧
+(∧)  ∷  Bool → Bool → Bool
+a ∧ b  =  a && b
+\end{code}
+
+\begin{code}               
+infix 4 ≤, ≥
+(≤), (≥)  ∷  (Ord a) ⇒ a → a → Bool
+a ≤ b  =  a <= b
+a ≥ b  =  a >= b
+\end{code}
+
+\begin{code}
+infixr 9 ·
+(·)  ∷  (b → c ) → (a → b) → (a → c)
+f · g  =  \ x → f (g x)
+\end{code}
 
 ∷ ⇒ ∀ → ← ⋯ ∨ ∧ ≤ ≥ ·
