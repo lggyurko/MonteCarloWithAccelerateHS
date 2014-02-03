@@ -14,6 +14,7 @@ This module defines data types and operations to model and update the state of t
 
 
 The following data types model vectors, states and 3-by-3 matrices respectively. 
+
 The particular form ensures that these objects can be used as element types in Accelerate Arrays. 
 
 > type N = Int64
@@ -50,7 +51,9 @@ Paired version of the matrix-vector multiplication on GPUs:
 >       liftS (uab1, uab2)
 
 % ----------------------------------------------------
+
 % ----------------------------------------------------
+
 The rest of the module contains a few helper functions. 
 
 > tr1 :: Triple e → e
