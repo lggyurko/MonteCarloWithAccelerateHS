@@ -14,21 +14,35 @@
 
 
 The simpleMC function consists of the following steps:
+
 \begin{itemise}
+
 \item initialise the generator states and model states,
+
 \item define the update actions and pipes them together,
+
 \item aggregates the final model values across threads. 
+
 \end{itemise}
 
 The function takes the following input arguments:
+
 \begin{itemise}
+
 \item number of threads, 
+
 \item half the number of steps per thread
+
 \item initial generator state
+
 \item initial model state
+
 \item an (Exp Double → Exp Double → Exp e → Exp e) update function
+
 \item an (Exp e → Exp a) payoff function
+
 \item an (Exp a → Exp a → Exp a) aggregator function
+
 \end{itemise}
 
 Types: \cd{a} : random variable(s), \cd{b} model value, \cd{c} payoff value. 
@@ -71,10 +85,11 @@ Types: \cd{a} : random variable(s), \cd{b} model value, \cd{c} payoff value.
 >       steps   = Prelude.replicate m step
 >      
 >       -- step operations piped together: Acc (Array DIM1 (State N,e))
->       -- Prelude foldl1 is being used here
->       -- intermediate state arrays are garbage collected due to piping
 >       finalSts :: Acc (Array DIM1 (State N,b))
 >       finalSts = foldl1 (>->) steps initSts 
+>
+>       -- Prelude foldl1 is being used here
+>       -- intermediate state arrays are garbage collected due to piping
 >
 >       -- extract final model values
 >       finalVals :: Acc (Array DIM1 b)
