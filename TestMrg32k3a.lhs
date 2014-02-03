@@ -1,0 +1,324 @@
+% include lhs2TeX.sty
+%include agda.fmt
+%include lhs2TeX.fmt
+% include polycode.fmt 
+
+
+
+> {-# LANGUAGE UnicodeSyntax #-}
+> module TestMrg32k3a where
+> import MatrixVector as MV
+> import MonteCarloExample as MC
+> import Mrg32k3a
+> import BlackScholes
+> import Data.Array.Accelerate as A
+> import Data.Array.Accelerate.Interpreter as I 
+> import Test.HUnit
+> import Unicode
+
+
+The command \cd{runTestTT tests} runs all the tests. 
+
+Some helper functions to deal with \cd{Exp} terms 
+
+> extract :: Elt e ⇒ Exp e → e
+> extract a = indexArray (run $ unit $ a) Z
+>
+> isExpEqual :: (Elt e, IsScalar e) ⇒ Exp e → Exp e → Bool
+> isExpEqual a b = extract $ a ==* b
+>
+> assertExpEqual description expr1 expr2 = 
+>    assertBool description $ isExpEqual expr1 expr2
+
+% **********************************
+Testing matrix and vector operations. 
+% **********************************
+
+Definitions
+
+> v1    = (1,2,3) :: Triple MV.N
+> v2    = (4,5,6) :: Triple MV.N
+> v3    = (7,8,9) :: Triple MV.N
+> ev1   = constant v1 :: Exp (Triple MV.N)
+> ev2   = constant v2 :: Exp (Triple MV.N)
+> ev3   = constant v3 :: Exp (Triple MV.N)
+> st1   = (v1,v2) :: MV.State MV.N
+> est1  = constant st1 :: Exp (MV.State MV.N)
+> ma1   = (v1,v2,v3) :: Mat MV.N
+> ma2   = ((11,13,15),(17,19,23),(29,31,37)) :: Mat MV.N
+> ema1  = constant ma1 :: Exp (Mat MV.N)
+> ema2  = constant ma2 :: Exp (Mat MV.N)
+> mp    = (ma1, ma2) :: MatPair MV.N
+> emp   = constant mp :: Exp (MatPair MV.N)
+> m1    = constant $ 2^32 - 209 :: Exp N
+> rm1   = 1.0 / A.fromIntegral m1 :: Exp Double
+ 
+Test cases testing dot product. 
+
+> dp1 = prodDot m1 (unliftT ev1) (unliftT ev2)
+> dp2 = prodDot 10 (unliftT ev1) (unliftT ev2)
+> testProdDot01 = TestCase $ assertExpEqual "dp1" 32 dp1 
+> testProdDot02 = TestCase $ assertExpEqual "dp2" 2 dp2 
+
+Test cases testing matrix-vector multiplication:
+
+> mv1 = prodMV m1 (unliftM ema1) (unliftT ev1)
+> mv2 = prodMV 10 (unliftM ema1) (unliftT ev1)
+> testProdMv01 = TestCase $ assertExpEqual "mv11" 14 (tr1 $ mv1)
+> testProdMv02 = TestCase $ assertExpEqual "mv12" 32 (tr2 $ mv1)
+> testProdMv03 = TestCase $ assertExpEqual "mv13" 50 (tr3 $ mv1)
+>
+> testProdMv04 = TestCase $ assertExpEqual "mv21" 4 (tr1 $ mv2)
+> testProdMv05 = TestCase $ assertExpEqual "mv22" 2 (tr2 $ mv2)
+> testProdMv06 = TestCase $ assertExpEqual "mv23" 0 (tr3 $ mv2)
+
+Test cases testing matrix multiplication.
+
+> mm1 = prodMM m1 (unliftM ema1) (unliftM ema2)
+> mm2 = prodMM 100 (unliftM ema1) (unliftM ema2)
+> testMatrixMult01 = TestCase $ assertExpEqual "mm111" 132 (tr1 $ tr1 mm1) 
+> testMatrixMult02 = TestCase $ assertExpEqual "mm112" 144 (tr2 $ tr1 mm1) 
+> testMatrixMult03 = TestCase $ assertExpEqual "mm113" 172 (tr3 $ tr1 mm1) 
+> testMatrixMult04 = TestCase $ assertExpEqual "mm121" 303 (tr1 $ tr2 mm1) 
+> testMatrixMult05 = TestCase $ assertExpEqual "mm122" 333 (tr2 $ tr2 mm1) 
+> testMatrixMult06 = TestCase $ assertExpEqual "mm123" 397 (tr3 $ tr2 mm1) 
+> testMatrixMult07 = TestCase $ assertExpEqual "mm131" 474 (tr1 $ tr3 mm1) 
+> testMatrixMult08 = TestCase $ assertExpEqual "mm132" 522 (tr2 $ tr3 mm1) 
+> testMatrixMult09 = TestCase $ assertExpEqual "mm133" 622 (tr3 $ tr3 mm1) 
+>
+> testMatrixMult10 = TestCase $ assertExpEqual "mm211" 32 (tr1 $ tr1 mm2) 
+> testMatrixMult11 = TestCase $ assertExpEqual "mm212" 44 (tr2 $ tr1 mm2) 
+> testMatrixMult12 = TestCase $ assertExpEqual "mm213" 72 (tr3 $ tr1 mm2) 
+> testMatrixMult13 = TestCase $ assertExpEqual "mm221" 3  (tr1 $ tr2 mm2) 
+> testMatrixMult14 = TestCase $ assertExpEqual "mm222" 33 (tr2 $ tr2 mm2) 
+> testMatrixMult15 = TestCase $ assertExpEqual "mm223" 97 (tr3 $ tr2 mm2) 
+> testMatrixMult16 = TestCase $ assertExpEqual "mm231" 74 (tr1 $ tr3 mm2) 
+> testMatrixMult17 = TestCase $ assertExpEqual "mm232" 22 (tr2 $ tr3 mm2) 
+> testMatrixMult18 = TestCase $ assertExpEqual "mm233" 22 (tr3 $ tr3 mm2) 
+
+
+% **********************************
+Testing operations in Mrg32k3a
+% **********************************
+Testing the generation of uniform random numbers. 
+
+> state0 = constant state :: Exp (MV.State N)
+> ut1 = rm1 * (A.fromIntegral $ mod ((tr1 $ Prelude.fst $ unliftS state0) 
+>              + (tr1 $ Prelude.snd $ unliftS state0)) m1 :: Exp Double)
+> state1 = stateUpdate state0
+> ut2 = rm1 * (A.fromIntegral $ mod ((tr1 $ Prelude.fst $ unliftS state1) 
+>              + (tr1 $ Prelude.snd $ unliftS state1)) m1 :: Exp Double)
+> u1 = stateToUniform state0 
+> u2 = stateToUniform state1
+> testStateToUniform01 = TestCase $ assertExpEqual "st2uni1" ut1 u1
+> testStateToUniform02 = TestCase $ assertExpEqual "st2uni2" ut2 u2
+
+
+% ***************************************************
+% ***************************************************
+Testing the first Monte-Carlo example. 
+% ***************************************************
+% ***************************************************
+
+The tests below validate the quality of the standard normal random variables generated by the \cd{Mrg32k3a} module. In each case we test whether the exact value is within the $3\sigma$ confidence interval that we estimate using Monte-Carlo method. 
+
+% ***************************************************
+First example
+% *************************************************** 
+
+Estimating the moment generating function of the standard normal random variable. 
+
+A particular model update function. Arguments standard normals $Z_1$, $Z_2$, state at time $t_n$: $S_n$. Returns: state at time $t_{n+2}$. 
+
+Parameter of the moment generating fn. 
+
+> weight  = 0.73 :: Double
+
+A few precomputed constants. 
+
+> eweight  = constant weight :: Exp Double
+> zero    = 0.0 :: Exp Double
+> half    = 0.5 :: Exp Double
+> one     = 1.0 :: Exp Double
+> double  = 2.0 :: Exp Double
+>
+> -- model states: val, val^2
+> -- random variables: pair of rand var. (e.g. standard normals)
+> mgfFromPair ::  Exp (Double, Double) → Exp (Double,Double) → Exp (Double, Double)
+> mgfFromPair ms zs =
+>    let
+>       (z1,z2) = unlift zs
+>       (m1,m2) = unlift ms
+>       x1 = half * ernm * ((exp $ eweight * z1) + (exp $ eweight * z2))
+>       x2 = half * ernm * ( (exp $ eweight * z1 * double) 
+>                           + (exp $ eweight * z2 * double))
+>    in
+>       lift (m1+x1,m2+x2)
+
+A particular aggregate function:
+
+> sumP :: Exp (Double,Double) → Exp (Double,Double) → Exp (Double,Double)
+> sumP p1 p2 =
+>    let
+>       (x1,y1) = unlift p1 :: (Exp Double, Exp Double)
+>       (x2,y2) = unlift p2 :: (Exp Double, Exp Double)
+>    in 
+>       lift (x1 + x2, y1 + y2)
+
+Initialising the parameters. 
+
+> n = 1000 :: Int
+> m = 10 :: Int
+
+Some useful constants precomputed.
+
+> v10 = (0.0,0.0) :: (Double,Double)
+> rm = 1.0 / Prelude.fromIntegral m :: Double
+> erm = constant rm :: Exp Double
+> rn = 1.0 / Prelude.fromIntegral n :: Double
+> ern = constant rn :: Exp Double
+> rnm = rn * rm
+> ernm = ern * erm
+> rsq2m = sqrt $ 0.5 * rm
+> ersq2m = constant rsq2m :: Exp Double
+
+Running the MC code, and estimating the standard deviation. 
+
+> mce1 = simpleMC n m state v10 generateNormalPair mgfFromPair id sumP
+> (mce11, mce12) = indexArray (run mce1) Z
+> stdevmc1 = sqrt $ 0.5 * rnm * (mce12 - mce11 * mce11)
+>
+> exactValmc1 = (exp $ weight * weight * 0.5)
+>
+> mcIneq1 =  (mce11 - 3 * stdevmc1) < exactValmc1 
+>            ∧ (mce11 + 3 * stdevmc1) > exactValmc1
+>
+> testmc1 = TestCase $ assertBool "mc1" $ mcIneq1
+
+% ***************************************************
+Second example.
+% ***************************************************
+
+Estimating the moment generating function of sums of $2m$ standard normals. 
+
+> sumPairs :: Exp Double → Exp (Double,Double) → Exp Double
+> sumPairs v zs =
+>    let
+>       (z1, z2) = unlift zs :: (Exp Double, Exp Double)
+>    in
+>       v + z1 + z2
+
+The payoff function. (Note: the sum of $2m$ standard normals has variance $2m$, that is why we divide x by $\sqrt{2m}$.)
+
+> mfgPf :: Exp Double → Exp (Double,Double)
+> mfgPf x = let y = (exp $ eweight * ersq2m * x) in lift (ern * y, ern * y * y)
+
+The aggregate function is \cd{sumP} again.
+
+> v20 = 0.0 :: Double
+
+> mce2 = simpleMC n m state v20 generateNormalPair sumPairs mfgPf sumP
+> (mce21, mce22) = indexArray (run mce2) Z
+> stdevmc2 = sqrt $ rn * (mce22 - mce21 * mce21)
+>
+> exactValmc2 = (exp $ weight * weight * 0.5)
+>
+> mcIneq2 =  (mce21 - 3 * stdevmc2) < exactValmc2 
+>            ∧ (mce21 + 3 * stdevmc2) > exactValmc2
+> testmc2 = TestCase $ assertBool "mc2" $ mcIneq2
+
+% ***************************************************
+Third example: estimating the price of an European call option
+
+Parameters of the BS model.
+
+> r       = 0.1 :: Double
+> sigma   = 0.3 :: Double
+> t       = 0.5 :: Double
+> k       = 1.0 :: Double
+> s0      = 1.0 :: Double 
+
+Some precomputed constants.
+
+> er      = constant r :: Exp Double
+> esigma  = constant sigma :: Exp Double
+> et      = constant t :: Exp Double
+> dt      = et * half * erm
+> drift   = 0.5 * t * rm * ( r - sigma * sigma * 0.5) :: Double
+> edrift  = constant drift :: Exp Double 
+> sqdt    = sqrt dt
+> ek      = constant k :: Exp Double
+> logS0   = log s0
+
+Actually, there is no need to take substeps when the underlying stock price follows a geometric Brownian motion and we only need the price at maturity. Here, we do that for testing purposes only. 
+
+> geomBM :: Exp Double → Exp (Double,Double) → Exp Double
+> geomBM sn zs = 
+>    let
+>       (z1,z2) = unlift zs :: (Exp Double, Exp Double)
+>    in 
+>       sn * (exp $ double * edrift + esigma * sqdt * (z1 + z2))
+
+> callPayoff :: Exp Double → Exp (Double, Double)
+> callPayoff s = 
+>    let
+>       v = (s <* ek) ? (zero, s-ek) :: Exp Double
+>    in 
+>       lift (ern * v, ern * v * v) 
+
+The aggregate function is \cd{sumP} again.
+
+> mce3 = simpleMC n m state s0 generateNormalPair geomBM callPayoff sumP
+> (mce31, mce32) = indexArray (run mce3) Z
+> stdevmc3 = sqrt $ rn * (mce32 - mce31 * mce31)
+>
+> exactValmc3 = (callOption s0 k r t sigma) * (exp $ r * t)
+>
+> mcIneq3 =  (mce31 - 3 * stdevmc3) < exactValmc3 
+>            ∧ (mce31 + 3 * stdevmc3) > exactValmc3
+> testmc3 = TestCase $ assertBool "mc3" $ mcIneq3
+
+
+% ***************************************************
+Fourth example: knock-out or look-back option
+
+To be implemented. 
+
+% **********************************
+% **********************************
+Registering the test cases:
+% **********************************
+% **********************************
+
+> tests = TestList [  TestLabel "prodDot" testProdDot01,
+>                     TestLabel "prodDot" testProdDot02,
+>                     TestLabel "prodMV" testProdMv01,
+>                     TestLabel "prodMV" testProdMv02,
+>                     TestLabel "prodMV" testProdMv03,
+>                     TestLabel "prodMV" testProdMv04,
+>                     TestLabel "prodMV" testProdMv05,
+>                     TestLabel "prodMV" testProdMv06,
+>                     TestLabel "matrixProduct" testMatrixMult01,
+>                     TestLabel "matrixProduct" testMatrixMult02,
+>                     TestLabel "matrixProduct" testMatrixMult03,
+>                     TestLabel "matrixProduct" testMatrixMult04,
+>                     TestLabel "matrixProduct" testMatrixMult05,
+>                     TestLabel "matrixProduct" testMatrixMult06,
+>                     TestLabel "matrixProduct" testMatrixMult07,
+>                     TestLabel "matrixProduct" testMatrixMult08,
+>                     TestLabel "matrixProduct" testMatrixMult09,
+>                     TestLabel "matrixProduct" testMatrixMult10,
+>                     TestLabel "matrixProduct" testMatrixMult11,
+>                     TestLabel "matrixProduct" testMatrixMult12,
+>                     TestLabel "matrixProduct" testMatrixMult13,
+>                     TestLabel "matrixProduct" testMatrixMult14,
+>                     TestLabel "matrixProduct" testMatrixMult15,
+>                     TestLabel "matrixProduct" testMatrixMult16,
+>                     TestLabel "matrixProduct" testMatrixMult17,
+>                     TestLabel "matrixProduct" testMatrixMult18,
+>                     TestLabel "state2uni" testStateToUniform01,
+>                     TestLabel "state2uni" testStateToUniform02,
+>                     TestLabel "MC" testmc1,
+>                     TestLabel "MC" testmc2,
+>                     TestLabel "MC" testmc3
+>                   ]

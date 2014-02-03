@@ -1,38 +1,25 @@
-%include agda.fmt
-%include lhs2TeX.fmt
 
+Module containing helper functions for the unicode mode; in the style of Ralph Hinze. 
 
+> {-# LANGUAGE UnicodeSyntax #-}
+>
+> module Unicode
+> where
 
-\begin{code}
-{-# LANGUAGE UnicodeSyntax #-}
+> infixr 2 ∨
+> (∨)  ∷  Bool → Bool → Bool
+> a ∨ b  =  a || b
 
-module Unicode
-where
-\end{code}
+> infixr 3 ∧
+> (∧)  ∷  Bool → Bool → Bool
+> a ∧ b  =  a && b
+               
+> infix 4 ≤, ≥
+> (≤), (≥)  ∷  (Ord a) ⇒ a → a → Bool
+> a ≤ b  =  a <= b
+> a ≥ b  =  a >= b
 
-\begin{code}
-infixr 2 ∨
-(∨)  ∷  Bool → Bool → Bool
-a ∨ b  =  a || b
-\end{code}
+> infixr 9 ·
+> (·)  ∷  (b → c ) → (a → b) → (a → c)
+> f · g  =  \ x → f (g x)
 
-\begin{code}
-infixr 3 ∧
-(∧)  ∷  Bool → Bool → Bool
-a ∧ b  =  a && b
-\end{code}
-
-\begin{code}               
-infix 4 ≤, ≥
-(≤), (≥)  ∷  (Ord a) ⇒ a → a → Bool
-a ≤ b  =  a <= b
-a ≥ b  =  a >= b
-\end{code}
-
-\begin{code}
-infixr 9 ·
-(·)  ∷  (b → c ) → (a → b) → (a → c)
-f · g  =  \ x → f (g x)
-\end{code}
-
-∷ ⇒ ∀ → ← ⋯ ∨ ∧ ≤ ≥ ·
