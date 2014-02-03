@@ -87,8 +87,8 @@ Types: \cd{a} : random variable(s), \cd{b} model value, \cd{c} payoff value.
 >       -- step operations piped together
 >       finalSts = Prelude.foldl1 (>->) steps initSts :: Acc (Array DIM1 (State N,b))
 >
->       -- extract final model values
->       (_,finalVals) = A.unzip finalSts :: Acc (Array DIM1 b)
+>       -- extract final model values finalVals :: Acc (Array DIM1 b)
+>       (_,finalVals) = A.unzip finalSts
 >
 >       -- mapping payoff over final states
 >       payoffVals = A.map pf finalVals :: Acc (Array DIM1 c)
