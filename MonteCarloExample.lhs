@@ -83,25 +83,19 @@ Types: \cd{a} : random variable(s), \cd{b} model value, \cd{c} payoff value.
 >       -- list of operations (do we need a list?)
 >       steps :: [Acc (Array DIM1 (State N,b)) → Acc (Array DIM1 (State N,b))]
 >       steps   = Prelude.replicate m step
->      
->       -- step operations piped together: Acc (Array DIM1 (State N,e))
->       finalSts :: Acc (Array DIM1 (State N,b))
->       finalSts = foldl1 (>->) steps initSts 
 >
->       -- Prelude foldl1 is being used here
->       -- intermediate state arrays are garbage collected due to piping
+>       -- step operations piped together
+>       finalSts = Prelude.foldl1 (>->) steps initSts :: Acc (Array DIM1 (State N,b))
 >
 >       -- extract final model values
->       finalVals :: Acc (Array DIM1 b)
->       (_,finalVals) = A.unzip finalSts
+>       (_,finalVals) = A.unzip finalSts :: Acc (Array DIM1 b)
 >
->       -- mapping payoff over final states: Acc (Array DIM1 a)
->       payoffVals :: Acc (Array DIM1 c)
->       payoffVals = A.map pf finalVals
+>       -- mapping payoff over final states
+>       payoffVals = A.map pf finalVals :: Acc (Array DIM1 c)
 >
 >    in
->       -- aggregating payoff values      
->       fold1 af payoffVals :: Acc (Array DIM0 c)
+>       -- aggregation of payoff values
+>       fold1 af payoffVals :: Acc (Aray DIM0 c)
 
 
 Initial state of the generator.
