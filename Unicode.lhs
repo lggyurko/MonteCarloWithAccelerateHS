@@ -1,5 +1,4 @@
-
-Helper functions for the unicode mode; in the style of Ralph Hinze. 
+Helper functions for the unicode mode; in the style of Ralf Hinze. 
 
 > {-# LANGUAGE UnicodeSyntax #-}
 >
