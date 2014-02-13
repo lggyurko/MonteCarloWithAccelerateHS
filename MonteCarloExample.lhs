@@ -95,7 +95,7 @@ Types: \cd{a} : random variable(s), \cd{b} model value, \cd{c} payoff value.
 >
 >    in
 >       -- aggregation of payoff values
->       fold1 af payoffVals :: Acc (Aray DIM0 c)
+>       fold1 af payoffVals :: Acc (Array DIM0 c)
 
 
 Initial state of the generator.
