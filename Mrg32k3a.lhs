@@ -7,7 +7,8 @@
 > {-# LANGUAGE UnicodeSyntax #-}
 >
 > module Mrg32k3a 
->    ( initStates, generateNormalPair, generateUniform, updateFn,
+>    ( initStates, generateNormalPair, generateNormalPairF, 
+>      generateUniform, generateUniformF, updateFn,
 >      stateUpdate, stateToUniform )  where
 > import MatrixVector
 > import Unicode 
@@ -53,26 +54,60 @@ From generator state to uniform(0,1):
 >    in
 >       x * rm1 
 
+Float version of stateToUniform - matters on GPUs (?)
+
+> stateToUniformF :: Exp (State N) → Exp Float
+> stateToUniformF s =
+>    let
+>       (s1,s2) = unliftS s
+>       x1 = tr1 s1
+>       x2 = tr1 s2
+>       x  = A.fromIntegral $ mod (x1 + x2) m1 :: Exp Float 
+>    in
+>       x * rm1f 
+
 Generator: returns the new state of the generator and a uniform(0,1) variable. 
 
 > generateUniform :: Exp (State N) → Exp (State N, Double)
 > generateUniform s = let s1 = stateUpdate s in lift (s1, stateToUniform s)
 
+Float version of generateUniform - matters on GPUs (?)
+
+> generateUniformF :: Exp (State N) → Exp (State N, Float)
+> generateUniformF s = let s1 = stateUpdate s in lift (s1, stateToUniformF s)
+
+
 Box-Muller method:
 
 > tpi = constant 2.0 * pi :: Exp Double
+> tpif = constant 2.0 * pi :: Exp Float
 
 > boxMuller :: Exp (State N) → Exp (State N) → Exp (Double, Double)
 > boxMuller s1 s2 = 
 >    let
 >       y1 = stateToUniform s1
 >       y2 = stateToUniform s2
->       l = sqrt $ (-2.0) * (log y1)
+>       l = sqrt $ (-2.0) * (log y1) :: Exp Double
 >       p = tpi * y2
 >       c = cos p
 >       s = sin p
 >    in
 >      lift (l * c, l * s)
+
+Float version of boxMuller:
+
+> boxMullerF :: Exp (State N) → Exp (State N) → Exp (Float,Float)
+> boxMullerF s1 s2 = 
+>    let
+>       y1 = stateToUniformF s1
+>       y2 = stateToUniformF s2
+>       l = sqrt $ (-2.0) * (log y1) :: Exp Float
+>       p = tpif * y2
+>       c = cos p
+>       s = sin p
+>    in
+>      lift (l * c, l * s)
+
 
 Generator: returns the new state of the generator (after two updates!), and a pair of standard normals. 
 
@@ -82,6 +117,18 @@ Generator: returns the new state of the generator (after two updates!), and a pa
 >       s1 = stateUpdate s
 >       s2 = stateUpdate s1
 >       ns = boxMuller s s1 
+>    in 
+>       lift (s2, ns)
+
+
+Float version of generateNormalPair
+
+> generateNormalPairF :: Exp (State N) → Exp (State N, (Float,Float)) 
+> generateNormalPairF s =
+>    let
+>       s1 = stateUpdate s
+>       s2 = stateUpdate s1
+>       ns = boxMullerF s s1 
 >    in 
 >       lift (s2, ns)
 
@@ -101,6 +148,7 @@ Some constants:
 > m1 = constant $ 2^32 - 209 :: Exp N
 > am1 = unit m1 :: Acc (Scalar N)
 > rm1 = 1.0 / A.fromIntegral m1 :: Exp Double
+> rm1f = 1.0 / A.fromIntegral m1 :: Exp Float
 > a2 = 527612 :: N
 > b2 = 1370589 :: N
 > m2 = constant $ 2^32 - 22853 :: Exp N
