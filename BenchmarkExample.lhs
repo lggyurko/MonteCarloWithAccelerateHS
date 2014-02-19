@@ -10,7 +10,7 @@
 > import MonteCarloExample as MC
 > import Mrg32k3a
 > import Data.Array.Accelerate as A
-> import Data.Array.Accelerate.Interpreter as I 
+> import Data.Array.Accelerate.CUDA as I 
 > import Unicode
 
 > type Sc = Float -- Float
