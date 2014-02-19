@@ -6,12 +6,21 @@
 
 
 > {-# LANGUAGE UnicodeSyntax #-}
-> module BenchmarkExample where
+> module BenchmarkExample (main) where
 > import MonteCarloExample as MC
 > import Mrg32k3a
 > import Data.Array.Accelerate as A
 > import Data.Array.Accelerate.CUDA as I 
 > import Unicode
+
+
+>
+> main :: IO()
+> main =  do 
+>    putStr "Average value and standard deviation of error = " 
+>    putStr $ show mc1
+>    putStr ", "
+>    putStrLn $ show stdev 
 
 > type Sc = Float -- Float
 > generateNormalP = generateNormalPairF -- generateNormalPairF
@@ -94,12 +103,6 @@ A particular aggregate function:
 > (mc1, mc2) = indexArray (run mc) Z
 > stdev = sqrt $ rn * (mc2 - mc1 * mc1)
 
->
-> main :: IO()
-> main =  do 
->    putStr "Average value and standard deviation of error = " 
->    putStr $ show mc1
->    putStr ", "
->    putStrLn $ show stdev 
+
 
 
