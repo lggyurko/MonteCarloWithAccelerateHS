@@ -100,7 +100,7 @@ A particular aggregate function:
 
 > mc = simpleMC n m state (s0, s0) generateNormalP gbm2dEulerMaruyama payoff sumP
 >
-> (mc1, mc2) = indexArray (run mc) Z
+> (mc1, mc2) = indexArray (I.run mc) Z
 > stdev = sqrt $ rn * (mc2 - mc1 * mc1)
 
 
