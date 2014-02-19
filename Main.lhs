@@ -6,7 +6,7 @@
 
 
 > {-# LANGUAGE UnicodeSyntax #-}
-> module BenchmarkExample (main) where
+> module Main (main) where
 > import MonteCarloExample as MC
 > import Mrg32k3a
 > import Data.Array.Accelerate as A
